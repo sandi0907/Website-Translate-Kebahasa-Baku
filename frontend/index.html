@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BahasaBaku</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 font-sans">
+    <nav class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-600">BahasaBaku<span class="text-slate-800"></span></h1>
+            <div class="space-x-6 hidden md:flex">
+                <a href="index.html" class="text-blue-600 font-semibold">Home</a>
+                <a href="kamus.html" class="hover:text-blue-600">Kamus</a>
+                <a href="quiz-multiple.html" class="hover:text-blue-600">Quiz</a>
+                <a href="chat-dosen.html" class="hover:text-blue-600">Etika Chat</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto mt-10 p-4 max-w-4xl">
+        <section class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fas fa-magic text-blue-500 mr-2"></i> Perbaiki Kalimat
+            </h2>
+            <textarea id="inputText" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none transition-all" rows="4" placeholder="Contoh: aku mau nanya tugas kemarin itu gimana ya pak"></textarea>
+            
+            <button onclick="prosesTeks()" id="btnProses" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold w-full transition-all flex justify-center items-center">
+                <span id="btnText">Perbaiki Sekarang</span>
+                <div id="loader" class="hidden border-2 border-t-transparent border-white w-5 h-5 rounded-full animate-spin ml-2"></div>
+            </button>
+
+            <div id="resultArea" class="hidden mt-8 space-y-4 animate-fade-in">
+                <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+                    <p class="text-sm text-green-700 font-bold uppercase">Kalimat Baku:</p>
+                    <p id="outputBaku" class="text-lg text-slate-800 mt-1 italic"></p>
+                </div>
+                <button onclick="copyResult()" class="text-sm text-blue-600 hover:underline"><i class="far fa-copy"></i> Salin Hasil</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        async function prosesTeks() {
+            const text = document.getElementById('inputText').value;
+            if(!text) return alert("Masukkan teks terlebih dahulu!");
+
+            // UI Loading
+            document.getElementById('loader').classList.remove('hidden');
+            document.getElementById('btnText').innerText = "Sedang Memproses...";
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/perbaiki', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ text })
+                });
+                const data = await response.json();
+                
+                document.getElementById('outputBaku').innerText = data.result;
+                document.getElementById('resultArea').classList.remove('hidden');
+            } catch (err) {
+                alert("Gagal terhubung ke server.");
+            } finally {
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('btnText').innerText = "Perbaiki Sekarang";
+            }
+        }
+    </script>
+</body>
+</html>
