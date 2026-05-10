@@ -52,7 +52,7 @@
             document.getElementById('btnText').innerText = "Sedang Memproses...";
             
             try {
-                const response = await fetch('http://localhost:3000/api/perbaiki', {
+                const response = await fetch('/api/perbaiki', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ text })
