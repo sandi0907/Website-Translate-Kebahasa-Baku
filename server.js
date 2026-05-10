@@ -1,23 +1,28 @@
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // 1. Import CORS
 const { queryAI } = require('./aiService');
+const axios = require('axios');
 const app = express();
 
-app.use(cors());
+// 2. Gunakan Middleware
+app.use(cors()); // Mengizinkan akses dari domain luar (seperti HP kamu)
 app.use(express.json());
 
 // Endpoint Fitur 1: Perbaiki Kalimat
 app.post('/api/perbaiki', async (req, res) => {
     const { text } = req.body;
-    const prompt = `Perbaiki kalimat berikut menjadi Bahasa Indonesia baku, formal, dan benar secara tata bahasa. Tampilkan hasil perbaikan saja: "${text}"`;
-    const result = await queryAI(prompt);
-    res.json({ result });
+    if (!text) return res.status(400).json({ error: "Teks kosong" });
+
+    try {
+        const prompt = `Perbaiki kalimat berikut menjadi Bahasa Indonesia baku, formal, dan benar secara tata bahasa. Tampilkan hasil perbaikan saja: "${text}"`;
+        const result = await queryAI(prompt);
+        res.json({ result });
+    } catch (error) {
+        res.status(500).json({ error: "Gagal memproses AI" });
+    }
 });
 
-// Endpoint Fitur 2: Arti Kata (Tokenisasi Sederhana)
-const axios = require('axios');
-// Pastikan library axios sudah terinstall
-
+// Endpoint Fitur 2: Arti Kata (KBBI + AI Fallback)
 app.post('/api/kamus', async (req, res) => {
     const { word } = req.body;
     
@@ -26,13 +31,11 @@ app.post('/api/kamus', async (req, res) => {
     }
 
     try {
-        // 1. Panggil API Heru Sahat (Unofficial KBBI)
-        // URL: https://kbbi-api-zhirrr.vercel.app/api/kbbi?text=kata
-        const kbbiRes = await axios.get(`https://kbbi.kemendikdasmen.go.id${encodeURIComponent(word)}`);
+        // 3. Perbaikan URL API KBBI Heru Sahat
+        const apiUrl = `https://kbbi-api-zhirrr.vercel.app/api/kbbi?text=${encodeURIComponent(word)}`;
+        const kbbiRes = await axios.get(apiUrl);
         
-        // Cek apakah data ditemukan
         if (kbbiRes.data && kbbiRes.data.data && kbbiRes.data.data.length > 0) {
-            // Mengambil semua arti jika ada lebih dari satu
             const artiList = kbbiRes.data.data.map(item => item.lema + ": " + item.arti.join("; "));
             
             return res.json({ 
@@ -44,12 +47,10 @@ app.post('/api/kamus', async (req, res) => {
         }
 
     } catch (error) {
-        console.log("KBBI tidak ditemukan, beralih ke AI...");
+        console.log("KBBI tidak ditemukan atau error, beralih ke AI...");
         
-        // 2. Fallback ke AI jika KBBI tidak menemukan kata tersebut
         try {
             const aiPrompt = `Berikan definisi singkat dan formal dalam Bahasa Indonesia untuk kata: "${word}". Jika itu bahasa tidak baku, berikan bentuk bakunya.`;
-            // Asumsi fungsi queryAI sudah kamu buat di aiService.js
             const aiResult = await queryAI(aiPrompt); 
             
             res.json({ 
@@ -62,4 +63,6 @@ app.post('/api/kamus', async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+// 4. Gunakan Port Dinamis untuk Vercel
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
